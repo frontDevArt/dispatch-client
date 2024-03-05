@@ -1,7 +1,15 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './App.scss';
 
 const App = () => {
-  return <div className="app">App</div>;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate('/Account/Login');
+  }, [navigate]);
+
+  return <div className="app" />;
 };
 
 export default App;
